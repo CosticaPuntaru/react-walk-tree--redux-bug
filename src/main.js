@@ -1,7 +1,9 @@
 import React from 'react'
+import { renderToString } from 'react-dom/server'
 import ReactDOM from 'react-dom'
 import createStore from './store/createStore'
 import './styles/main.scss'
+import asyncBootstrapper from './bootstrap';
 
 // Store Initialization
 // ------------------------------------
@@ -14,11 +16,11 @@ const MOUNT_NODE = document.getElementById('root')
 let render = () => {
   const App = require('./components/App').default
   const routes = require('./routes/index').default(store)
-
-  ReactDOM.render(
-    <App store={store} routes={routes} />,
-    MOUNT_NODE
-  )
+  const MyApp = <App store={store} routes={routes} />;
+  asyncBootstrapper(store, MyApp).then(() => {
+    console.log('bootstrap finished ');
+    MOUNT_NODE.innerHTML = renderToString(MyApp);
+  })
 }
 
 // Development Tools
@@ -43,13 +45,13 @@ if (__DEV__) {
 
     // Setup hot module replacement
     module.hot.accept([
-      './components/App',
-      './routes/index',
-    ], () =>
-      setImmediate(() => {
-        ReactDOM.unmountComponentAtNode(MOUNT_NODE)
-        render()
-      })
+        './components/App',
+        './routes/index',
+      ], () =>
+        setImmediate(() => {
+          ReactDOM.unmountComponentAtNode(MOUNT_NODE)
+          render()
+        })
     )
   }
 }
